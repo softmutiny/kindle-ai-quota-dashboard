@@ -25,6 +25,17 @@
       "allowLocalCredentialRead": false,
       "credentialsFile": "~/.kimi-code/credentials/kimi-code.json",
       "baseUrl": "https://api.kimi.com/coding/v1"
+    },
+    "google": {
+      "enabled": false,
+      "experimental": true,
+      "allowLocalCredentialRead": false,
+      "credentialsFile": "~/.config/gcloud/kindle-dashboard-sa.json",
+      "projectId": "",
+      "service": "generativelanguage.googleapis.com",
+      "quotaMetric": "",
+      "dailyLimit": 0,
+      "label": "Gemini"
     }
   }
 }

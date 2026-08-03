@@ -1,6 +1,6 @@
 # Kindle AI 额度中控台
 
-把吃灰的 Kindle 变成 AI 额度监控屏。实时显示 Claude、Codex、Kimi、DeepSeek 的用量，外加天气和每日一语。
+把吃灰的 Kindle 变成 AI 额度监控屏。实时显示 Claude、Codex、Kimi、Gemini、DeepSeek 的用量，外加天气和每日一语。
 
 **不需要同一个 WiFi。** 电脑和 Kindle 可以在不同的网络——数据通过 GitHub Pages 中转，只要两边都能上网就行。这是和 GitHub 上其他类似项目最大的区别：它们大多要求电脑和显示设备在同一个局域网里。
 
@@ -11,7 +11,7 @@
 ## 它能做什么？
 
 - **跨网络实时同步**——电脑在公司、Kindle 在家，额度照样更新
-- 实时监控多个 AI 平台的额度用量（支持 Claude / Codex / Kimi / DeepSeek，可自行增减）
+- 实时监控多个 AI 平台的额度用量（支持 Claude / Codex / Kimi / Gemini / DeepSeek，可自行增减）
 - 在 Kindle 墨水屏上全屏显示，放桌上一眼就能看到谁快没额度了
 - 自带天气显示、电池电量、每日一语
 - 夜间自动省电（03:00–08:00 停止刷新）
@@ -115,9 +115,32 @@ npm run serve
 | Claude | 本机 Claude Code 登录凭证 | 需要在配置中显式开启 |
 | Codex | 本机 Codex CLI | 需要在配置中显式开启 |
 | Kimi | 本机 Kimi Code 登录凭证 | 只读，不会刷新你的令牌 |
+| Gemini | GCP 服务账号密钥 + Cloud Monitoring | 显示每日请求配额用量，见下 |
 | DeepSeek | 环境变量中的 API Key | 按量计费，显示余额 |
 
+屏幕上显示哪几张卡由 `web/index.html` 决定，和采集哪些数据源是两回事——采集器采到的东西全部写进 `data.json`，卡片只是挑其中几个显示。默认布局是 2×2 四张卡（Claude / Codex / Gemini / DeepSeek），想换回 Kimi 就把 `index.html` 里的 `cardGoogle` 改回 `cardKimi`，再改 `dashboard-runtime.js` 里对应的那一行。
+
 详见 [系统架构](docs/architecture.md)。
+
+### Gemini 配额
+
+Gemini 的额度**不能**用 `AIza...` 那种 API key 查——Google 没有提供「查剩余额度」的接口。这里走的是 Google Cloud Monitoring：读 `serviceruntime.googleapis.com/quota/*` 指标，算出每日请求配额用了百分之多少。
+
+前提是你的 Gemini 用量挂在一个你能进 Google Cloud Console 的项目下。配置步骤：
+
+1. 在 GCP 控制台建一个服务账号，只给 `roles/monitoring.viewer`（只读），下载 JSON 密钥到本机
+2. 给项目开启 Monitoring API
+3. `config.json` 里填 `providers.google` 的 `projectId` 和 `credentialsFile`（密钥文件路径，不是密钥内容），并把 `enabled` 和 `allowLocalCredentialRead` 都改成 `true`
+4. 跑 `npm run probe:google` 看该项目真实上报了哪些配额指标
+5. 想盯特定指标就把它的 `quota_metric` 填进 `quotaMetric`；留空则自动选 `generate_content_requests`（真正的模型调用），没有再退到 `api_requests`
+
+**`dailyLimit` 基本一定要手填。** 实测 Gemini 只上报分钟级上限，而且值是 `9223372036854775807`（int64 最大值，Google 用它表示"没设上限"），拿不到可用的每日上限。采集器会识别这个哨兵值，不会拿它当分母编出一个假的 0%。
+
+`dailyLimit` 留空时，卡片不画百分比，直接显示今天的真实调用次数（如 `183 次`），进度条留空。填上之后才变成百分比进度条。你的每日请求上限在 [AI Studio 的 rate limit 页](https://aistudio.google.com/rate-limit)能查到。
+
+⚠️ 注意免费层的 RPD 是**按模型**算的，而这个指标是整个项目所有模型的合计。所以填了 `dailyLimit` 之后那个百分比是个近似值，适合当"还剩多少"的粗略参考，不适合当精确读数。
+
+只画每日配额、不画 RPM/TPM 是有意的——那两个每分钟就重置，而 Kindle 三分钟才刷新一次，显示出来只是噪声。
 
 ## 天气
 
