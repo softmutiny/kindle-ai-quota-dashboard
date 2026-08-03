@@ -11,6 +11,7 @@
   "scripts": {
     "demo": "node src/collect.cjs --demo",
     "collect": "node src/collect.cjs",
+    "weather": "node scripts/fetch-weather.cjs",
     "build": "node scripts/build-site.cjs",
     "serve": "node scripts/serve.cjs",
     "package:kindle": "node scripts/build-kpkg.cjs",
