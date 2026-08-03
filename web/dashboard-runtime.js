@@ -177,6 +177,7 @@
     if (/5小时|5H/i.test(name)) return '5H QUOTA';
     if (/7天|周|WEEK/i.test(name)) return 'WEEKLY';
     if (/月|MONTH/i.test(name)) return 'MONTHLY';
+    if (/每日|日|DAILY/i.test(name)) return 'DAILY';
     return name || 'QUOTA';
   }
 
@@ -315,7 +316,7 @@
       updateWeather(data.weather);
       updateQuotaCard('cardClaude', data.sources.claude);
       updateQuotaCard('cardCodex', data.sources.codex);
-      updateQuotaCard('cardKimi', data.sources.kimi);
+      updateQuotaCard('cardGoogle', data.sources.google);
       updateBalance(data.sources.deepseek);
       updateQuote(data.quote);
       relativeNode = ui.find('relTime');

@@ -20,6 +20,7 @@ test('demo snapshot passes the public schema', () => {
   assert.doesNotThrow(() => validateSnapshot(snapshot));
   assert.equal(snapshot.weather.place, '示例城市');
   assert.equal(snapshot.sources.deepseek.balance, 12.34);
+  assert.equal(snapshot.sources.google.windows[0].name, '每日');
 });
 
 test('last known good data is preserved only for enabled failing providers', () => {
@@ -78,8 +79,10 @@ test('snapshot writer emits JSON and old-browser JavaScript', () => {
 });
 
 test('browser runtime is valid JavaScript', () => {
-  const result = spawnSync(process.execPath, ['--check', path.join(ROOT, 'web', 'app.js')], {
-    encoding: 'utf8',
-  });
-  assert.equal(result.status, 0, result.stderr);
+  for (const name of ['app.js', 'dashboard-runtime.js']) {
+    const result = spawnSync(process.execPath, ['--check', path.join(ROOT, 'web', name)], {
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, `${name}: ${result.stderr}`);
+  }
 });
